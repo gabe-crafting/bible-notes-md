@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Pin } from "lucide-react";
+import { BookOpen, Pin, ExternalLink } from "lucide-react";
 import {
   AccordionContent,
   AccordionItem,
@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
 
 interface Verse {
   verse: number;
@@ -193,6 +194,23 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
     ? pinnedVerses.some(p => p.reference === selectedVerseReference)
     : false;
 
+  const handleBibleGatewayLink = () => {
+    if (!parsedReference || !selectedVerseReference) return;
+    
+    // Build the verse reference for BibleGateway
+    // Format: BOOK CHAPTER:VERSE or BOOK CHAPTER:VERSE1-VERSE2
+    let verseRef = `${parsedReference.book} ${parsedReference.chapter}`;
+    if (parsedReference.verseEnd) {
+      verseRef += `:${parsedReference.verseStart}-${parsedReference.verseEnd}`;
+    } else {
+      verseRef += `:${parsedReference.verseStart}`;
+    }
+    
+    // Open BibleGateway in the system browser
+    const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(verseRef)}&version=NKJV`;
+    BrowserOpenURL(url);
+  };
+
 
   return (
     <AccordionItem value="verses">
@@ -203,28 +221,40 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-x-hidden">
           {selectedVerseReference && parsedReference ? (
             <>
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs font-semibold text-muted-foreground">
+              <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
+                <div className="text-xs font-semibold text-muted-foreground truncate min-w-0">
                   {parsedReference.book} {parsedReference.chapter}
                   {parsedReference.verseEnd 
                     ? `:${parsedReference.verseStart}-${parsedReference.verseEnd}`
                     : `:${parsedReference.verseStart}`
                   }
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={handlePin}
-                >
-                  <Pin className={cn(
-                    "h-3 w-3",
-                    isPinned && "fill-current"
-                  )} />
-                </Button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleBibleGatewayLink}
+                    title="Open in BibleGateway"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handlePin}
+                    title={isPinned ? "Unpin verse" : "Pin verse"}
+                  >
+                    <Pin className={cn(
+                      "h-3 w-3",
+                      isPinned && "fill-current"
+                    )} />
+                  </Button>
+                </div>
               </div>
               {loadingVerses ? (
                 <div className="text-xs text-muted-foreground py-2">Loading verses...</div>
@@ -263,8 +293,8 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {pinnedVerses.map((pinned, index) => (
                   <div key={index} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-semibold text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <div className="text-xs font-semibold text-muted-foreground truncate min-w-0">
                         {pinned.book} {pinned.chapter}
                         {pinned.verseEnd 
                           ? `:${pinned.verseStart}-${pinned.verseEnd}`
@@ -274,7 +304,7 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5"
+                        className="h-5 w-5 flex-shrink-0"
                         onClick={() => setPinnedVerses(prev => prev.filter((_, i) => i !== index))}
                       >
                         <Pin className="h-3 w-3 fill-current" />

@@ -1,4 +1,4 @@
-import { Search, History } from "lucide-react";
+import { Search, History, Copy } from "lucide-react";
 import {
   AccordionContent,
   AccordionItem,
@@ -14,6 +14,7 @@ interface HistoryAccordionProps {
   currentFileIndex: number;
   onFileSelect: (index: number) => void;
   onFileRemove: (index: number) => void;
+  currentFilePath: string | null;
 }
 
 export function HistoryAccordion({
@@ -21,9 +22,20 @@ export function HistoryAccordion({
   currentFileIndex,
   onFileSelect,
   onFileRemove,
+  currentFilePath,
 }: HistoryAccordionProps) {
   const { searchQuery, setSearchQuery, filteredHistory, getFileName } =
     useFilteredHistory(fileHistory);
+
+  const handleCopyPath = async () => {
+    if (currentFilePath) {
+      try {
+        await navigator.clipboard.writeText(currentFilePath);
+      } catch (error) {
+        console.error('Failed to copy path:', error);
+      }
+    }
+  };
 
   return (
     <AccordionItem value="history">
@@ -53,6 +65,20 @@ export function HistoryAccordion({
             onFileSelect={onFileSelect}
             onFileRemove={onFileRemove}
           />
+          {currentFilePath && (
+            <div className="flex items-center gap-1 px-2 py-1">
+              <div className="text-[10px] text-muted-foreground font-mono truncate flex-1 min-w-0">
+                {currentFilePath}
+              </div>
+              <button
+                onClick={handleCopyPath}
+                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                title="Copy path"
+              >
+                <Copy className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
       </AccordionContent>
     </AccordionItem>

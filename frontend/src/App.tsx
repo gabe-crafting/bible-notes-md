@@ -172,6 +172,7 @@ function App() {
                 onFileRemove={handleFileRemove}
                 content={content}
                 selectedVerseReference={selectedVerseReference}
+                currentFilePath={currentFilePath}
             />
             <SidebarInset>
                 <div className="h-screen flex flex-col bg-background">
@@ -188,11 +189,6 @@ function App() {
                     onOpenChange={setLinkDialogOpen}
                     editor={editorRef.current}
                 />
-                {currentFilePath && (
-                    <span className="ml-auto text-sm text-muted-foreground font-mono px-3 py-1.5 bg-muted rounded-md truncate max-w-md">
-                        {currentFilePath}
-                    </span>
-                )}
                     </div>
                     <Editor
                         key={currentFilePath || 'new-file'}
