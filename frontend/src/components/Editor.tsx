@@ -11,12 +11,13 @@ interface EditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   onEditorReady?: (editor: TipTapEditor) => void;
+  onVerseClick?: (reference: string) => void;
   key?: string | number; // Add key prop to force remount when file changes
 }
 
 export type { TipTapEditor };
 
-export function Editor({ content, onChange, placeholder = 'Start typing your MDX content here...', onEditorReady }: EditorProps) {
+export function Editor({ content, onChange, placeholder = 'Start typing your MDX content here...', onEditorReady, onVerseClick }: EditorProps) {
   const contentRef = useRef(content);
   const isInternalUpdate = useRef(false);
   const editorRef = useRef<TipTapEditor | null>(null);
@@ -69,7 +70,7 @@ export function Editor({ content, onChange, placeholder = 'Start typing your MDX
             return true; // Indicates we handled it
           }
         }
-        return false; // Let TipTap handle it normally
+
       },
       handleKeyDown: (view, event) => {
         const editor = editorRef.current;
@@ -156,6 +157,121 @@ export function Editor({ content, onChange, placeholder = 'Start typing your MDX
   if (!editor) {
     return null;
   }
+
+
+  // Use event delegation to handle verse reference clicks and hover
+  useEffect(() => {
+    if (!editor || !onVerseClick) return;
+
+    const editorDom = editor.view.dom;
+    if (!editorDom) return;
+
+    const handleClick = (e: MouseEvent) => {
+      // Get the editor's text content and click position
+      const { state } = editor.view;
+      const coords = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+      if (!coords) return;
+
+      const pos = coords.pos;
+      const docText = state.doc.textContent;
+      
+      // Find verse references - collect all matches first, then find the best one
+      const versePattern = /\[([A-Za-z0-9\s]+)\s+(\d+):(\d+)(?:-(\d+))?\]/g;
+      const matches: Array<{ start: number; end: number; text: string; center: number }> = [];
+      let match;
+      
+      // Collect all verse references with their positions
+      while ((match = versePattern.exec(docText)) !== null) {
+        if (!match[0] || match.index === undefined) continue;
+        
+        const matchStart = match.index;
+        const matchEnd = match.index + match[0].length;
+        const center = matchStart + (matchEnd - matchStart) / 2;
+        
+        matches.push({
+          start: matchStart,
+          end: matchEnd,
+          text: match[0],
+          center
+        });
+      }
+      
+      // Find the verse reference that contains the click position
+      // If multiple contain it, prefer the one where the click is closest to center
+      let clickedMatch: { start: number; end: number; text: string } | null = null;
+      let bestMatch: { start: number; end: number; text: string; centerDistance: number } | null = null;
+      
+      for (const m of matches) {
+        if (pos >= m.start && pos <= m.end) {
+          const centerDistance = Math.abs(pos - m.center);
+          if (!bestMatch || centerDistance < bestMatch.centerDistance) {
+            bestMatch = {
+              start: m.start,
+              end: m.end,
+              text: m.text,
+              centerDistance
+            };
+          }
+        }
+      }
+      
+      // If we found a match that contains the click position, use it
+      if (bestMatch) {
+        clickedMatch = {
+          start: bestMatch.start,
+          end: bestMatch.end,
+          text: bestMatch.text
+        };
+      }
+      
+      if (clickedMatch) {
+        e.preventDefault();
+        e.stopPropagation();
+        const reference = clickedMatch.text.slice(1, -1);
+        console.log('Verse reference clicked:', reference);
+        onVerseClick(reference);
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const { view } = editor;
+      if (!view) return;
+
+      const coords = view.posAtCoords({ left: e.clientX, top: e.clientY });
+      if (!coords) {
+        (editorDom as HTMLElement).style.cursor = 'text';
+        return;
+      }
+
+      const pos = coords.pos;
+      const docText = view.state.doc.textContent;
+      const versePattern = /\[([A-Za-z0-9\s]+)\s+(\d+):(\d+)(?:-(\d+))?\]/g;
+      
+      let match;
+      while ((match = versePattern.exec(docText)) !== null) {
+        if (!match[0] || match.index === undefined) continue;
+        
+        const matchStart = match.index;
+        const matchEnd = match.index + match[0].length;
+        
+        if (pos >= matchStart && pos <= matchEnd) {
+          (editorDom as HTMLElement).style.cursor = 'pointer';
+          return;
+        }
+      }
+      
+      (editorDom as HTMLElement).style.cursor = 'text';
+    };
+
+    // Use capture phase to catch before TipTap handles it
+    editorDom.addEventListener('click', handleClick, true);
+    editorDom.addEventListener('mousemove', handleMouseMove);
+    
+    return () => {
+      editorDom.removeEventListener('click', handleClick, true);
+      editorDom.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [editor, onVerseClick]);
 
   return (
     <div className="flex-1 overflow-auto bg-background">

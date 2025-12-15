@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -9,12 +10,15 @@ import {
 import { Accordion } from "@/components/ui/accordion";
 import { FileHistoryItem } from "@/hooks/useFileHistory";
 import { HistoryAccordion } from "@/components/HistoryAccordion";
+import { VersesAccordion } from "@/components/VersesAccordion";
 
 interface FileHistorySidebarProps {
   fileHistory: FileHistoryItem[];
   currentFileIndex: number;
   onFileSelect: (index: number) => void;
   onFileRemove: (index: number) => void;
+  content: string;
+  selectedVerseReference: string | null;
 }
 
 export function FileHistorySidebar({
@@ -22,7 +26,17 @@ export function FileHistorySidebar({
   currentFileIndex,
   onFileSelect,
   onFileRemove,
+  content,
+  selectedVerseReference,
 }: FileHistorySidebarProps) {
+  const [accordionValue, setAccordionValue] = React.useState<string[]>(["history"]);
+
+  React.useEffect(() => {
+    if (selectedVerseReference) {
+      setAccordionValue(["history", "verses"]);
+    }
+  }, [selectedVerseReference]);
+
   return (
     <Sidebar collapsible="offcanvas" side="left">
       <SidebarHeader>
@@ -31,14 +45,19 @@ export function FileHistorySidebar({
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <Accordion type="multiple" defaultValue={["history"]} className="w-full">
+            <Accordion 
+              type="multiple" 
+              value={accordionValue}
+              onValueChange={setAccordionValue}
+              className="w-full"
+            >
               <HistoryAccordion
                 fileHistory={fileHistory}
                 currentFileIndex={currentFileIndex}
                 onFileSelect={onFileSelect}
                 onFileRemove={onFileRemove}
               />
-              {/* Future feature accordions can be added here */}
+              <VersesAccordion content={content} selectedVerseReference={selectedVerseReference} />
             </Accordion>
           </SidebarGroupContent>
         </SidebarGroup>

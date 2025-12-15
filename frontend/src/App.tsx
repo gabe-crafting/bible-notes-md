@@ -17,6 +17,7 @@ function App() {
     const [content, setContent] = useState('');
     const [, setUpdateKey] = useState(0);
     const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+    const [selectedVerseReference, setSelectedVerseReference] = useState<string | null>(null);
     const editorRef = useRef<TipTapEditor | null>(null);
 
     const {
@@ -169,6 +170,8 @@ function App() {
                 currentFileIndex={currentFileIndex}
                 onFileSelect={handleFileSelect}
                 onFileRemove={handleFileRemove}
+                content={content}
+                selectedVerseReference={selectedVerseReference}
             />
             <SidebarInset>
                 <div className="h-screen flex flex-col bg-background">
@@ -196,6 +199,7 @@ function App() {
                         content={content}
                         onChange={setContent}
                         onEditorReady={handleEditorReady}
+                        onVerseClick={setSelectedVerseReference}
                         placeholder="Start typing your MDX content here..."
                     />
                 </div>
