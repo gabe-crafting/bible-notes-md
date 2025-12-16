@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Pin } from "lucide-react";
+import { BookOpen, Pin, ExternalLink } from "lucide-react";
 import {
   AccordionContent,
   AccordionItem,
@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useBibleMetadata } from "@/hooks/useBibleMetadata";
+import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
 
 interface Verse {
   verse: number;
@@ -114,6 +115,16 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
     }
   };
 
+  const openInBibleGateway = (book: string, chapter: number, verseStart: number, verseEnd?: number) => {
+    const reference = verseEnd
+      ? `${book} ${chapter}:${verseStart}-${verseEnd}`
+      : `${book} ${chapter}:${verseStart}`;
+    const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(
+      reference
+    )}&version=NKJV`;
+    BrowserOpenURL(url);
+  };
+
   // Fetch verses when selectedVerseReference changes
   useEffect(() => {
     if (selectedVerseReference) {
@@ -181,17 +192,36 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
                     : `:${parsedReference.verseStart}`
                   }
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={handlePin}
-                >
-                  <Pin className={cn(
-                    "h-3 w-3",
-                    isPinned && "fill-current"
-                  )} />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() =>
+                      openInBibleGateway(
+                        parsedReference.book,
+                        parsedReference.chapter,
+                        parsedReference.verseStart,
+                        parsedReference.verseEnd
+                      )
+                    }
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handlePin}
+                  >
+                    <Pin
+                      className={cn(
+                        "h-3 w-3",
+                        isPinned && "fill-current"
+                      )}
+                    />
+                  </Button>
+                </div>
               </div>
               {loadingVerses ? (
                 <div className="text-xs text-muted-foreground py-2">Loading verses...</div>
@@ -238,14 +268,35 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
                           : `:${pinned.verseStart}`
                         }
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5"
-                        onClick={() => setPinnedVerses(prev => prev.filter((_, i) => i !== index))}
-                      >
-                        <Pin className="h-3 w-3 fill-current" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          onClick={() =>
+                            openInBibleGateway(
+                              pinned.book,
+                              pinned.chapter,
+                              pinned.verseStart,
+                              pinned.verseEnd
+                            )
+                          }
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5"
+                          onClick={() =>
+                            setPinnedVerses(prev =>
+                              prev.filter((_, i) => i !== index)
+                            )
+                          }
+                        >
+                          <Pin className="h-3 w-3 fill-current" />
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-1">
                       {pinned.verses.map((verse) => (

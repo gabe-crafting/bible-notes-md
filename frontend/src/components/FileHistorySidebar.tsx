@@ -19,6 +19,7 @@ interface FileHistorySidebarProps {
   onFileRemove: (index: number) => void;
   content: string;
   selectedVerseReference: string | null;
+  currentFilePath: string | null;
 }
 
 export function FileHistorySidebar({
@@ -28,6 +29,7 @@ export function FileHistorySidebar({
   onFileRemove,
   content,
   selectedVerseReference,
+  currentFilePath,
 }: FileHistorySidebarProps) {
   const [accordionValue, setAccordionValue] = React.useState<string[]>(["history"]);
 
@@ -56,6 +58,7 @@ export function FileHistorySidebar({
                 currentFileIndex={currentFileIndex}
                 onFileSelect={onFileSelect}
                 onFileRemove={onFileRemove}
+                currentFilePath={currentFilePath}
               />
               <VersesAccordion content={content} selectedVerseReference={selectedVerseReference} />
             </Accordion>
