@@ -11,6 +11,8 @@ import {SidebarProvider, SidebarTrigger, SidebarInset} from "@/components/ui/sid
 import {FileHistorySidebar} from "@/components/FileHistorySidebar";
 import {FormattingMenu} from "@/components/FormattingMenu";
 import {BibleVerse} from "@/components/BibleVerse";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 function App() {
     useTheme(); // Initialize theme system
@@ -140,7 +142,9 @@ function App() {
                 setContent(fileContent);
             } catch (error) {
                 console.error('Error loading file:', error);
-                alert('Failed to load file: ' + fileItem.filePath + '\n' + error);
+                toast.error('Failed to load file', {
+                    description: fileItem.filePath,
+                });
                 // Remove from history if file doesn't exist
                 removeFromHistory(index);
             }
@@ -165,6 +169,7 @@ function App() {
     
     return (
         <SidebarProvider defaultOpen={false}>
+            <Toaster />
             <FileHistorySidebar
                 fileHistory={fileHistory}
                 currentFileIndex={currentFileIndex}
@@ -172,7 +177,6 @@ function App() {
                 onFileRemove={handleFileRemove}
                 content={content}
                 selectedVerseReference={selectedVerseReference}
-                currentFilePath={currentFilePath}
             />
             <SidebarInset>
                 <div className="h-screen flex flex-col bg-background">
@@ -189,6 +193,11 @@ function App() {
                     onOpenChange={setLinkDialogOpen}
                     editor={editorRef.current}
                 />
+                {currentFilePath && (
+                    <span className="ml-auto text-sm text-muted-foreground font-mono px-3 py-1.5 bg-muted rounded-md truncate max-w-md">
+                        {currentFilePath}
+                    </span>
+                )}
                     </div>
                     <Editor
                         key={currentFilePath || 'new-file'}

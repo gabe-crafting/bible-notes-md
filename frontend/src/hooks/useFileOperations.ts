@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useState} from 'react';
 import {OpenFile, SaveFile, SaveFileAs} from "../../wailsjs/go/main/App";
 import {EventsOn} from "../../wailsjs/runtime/runtime";
+import { toast } from "sonner";
 
 export function useFileOperations(
     content: string,
@@ -16,10 +17,15 @@ export function useFileOperations(
                 setCurrentFilePath(result.filePath);
                 setContent(result.content);
                 onFileOpened?.(result.filePath);
+                toast.success("File opened", {
+                    description: result.filePath,
+                });
             }
         } catch (error) {
             console.error('Error opening file:', error);
-            alert('Failed to open file: ' + error);
+            toast.error('Failed to open file', {
+                description: String(error),
+            });
         }
     }, [setContent, onFileOpened]);
 
@@ -29,11 +35,15 @@ export function useFileOperations(
             if (filePath) {
                 setCurrentFilePath(filePath);
                 onFileOpened?.(filePath);
-                alert('File saved successfully!');
+                toast.success('File saved', {
+                    description: filePath,
+                });
             }
         } catch (error) {
             console.error('Error saving file:', error);
-            alert('Failed to save file: ' + error);
+            toast.error('Failed to save file', {
+                description: String(error),
+            });
         }
     }, [content, onFileOpened]);
 
@@ -43,10 +53,14 @@ export function useFileOperations(
         }
         try {
             await SaveFile(currentFilePath, content);
-            alert('File saved successfully!');
+            toast.success('File saved', {
+                description: currentFilePath,
+            });
         } catch (error) {
             console.error('Error saving file:', error);
-            alert('Failed to save file: ' + error);
+            toast.error('Failed to save file', {
+                description: String(error),
+            });
         }
     }, [currentFilePath, content, handleSaveAs]);
 
@@ -70,4 +84,3 @@ export function useFileOperations(
         handleSaveAs,
     };
 }
-

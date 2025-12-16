@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Pin, ExternalLink } from "lucide-react";
+import { BookOpen, Pin } from "lucide-react";
 import {
   AccordionContent,
   AccordionItem,
@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
+import { useBibleMetadata } from "@/hooks/useBibleMetadata";
 
 interface Verse {
   verse: number;
@@ -28,42 +28,6 @@ interface VersesAccordionProps {
   selectedVerseReference: string | null;
 }
 
-// Map book names to book numbers (1-66)
-const BOOK_TO_NUMBER: Record<string, number> = {
-  "Genesis": 1, "Exodus": 2, "Leviticus": 3, "Numbers": 4, "Deuteronomy": 5,
-  "Joshua": 6, "Judges": 7, "Ruth": 8, "1 Samuel": 9, "2 Samuel": 10,
-  "1 Kings": 11, "2 Kings": 12, "1 Chronicles": 13, "2 Chronicles": 14, "Ezra": 15,
-  "Nehemiah": 16, "Esther": 17, "Job": 18, "Psalms": 19, "Proverbs": 20,
-  "Ecclesiastes": 21, "Song of Songs": 22, "Isaiah": 23, "Jeremiah": 24, "Lamentations": 25,
-  "Ezekiel": 26, "Daniel": 27, "Hosea": 28, "Joel": 29, "Amos": 30,
-  "Obadiah": 31, "Jonah": 32, "Micah": 33, "Nahum": 34, "Habakkuk": 35,
-  "Zephaniah": 36, "Haggai": 37, "Zechariah": 38, "Malachi": 39,
-  "Matthew": 40, "Mark": 41, "Luke": 42, "John": 43, "Acts": 44,
-  "Romans": 45, "1 Corinthians": 46, "2 Corinthians": 47, "Galatians": 48, "Ephesians": 49,
-  "Philippians": 50, "Colossians": 51, "1 Thessalonians": 52, "2 Thessalonians": 53, "1 Timothy": 54,
-  "2 Timothy": 55, "Titus": 56, "Philemon": 57, "Hebrews": 58, "James": 59,
-  "1 Peter": 60, "2 Peter": 61, "1 John": 62, "2 John": 63, "3 John": 64,
-  "Jude": 65, "Revelation": 66
-};
-
-// All Bible books for matching
-const ALL_BOOKS = [
-  "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
-  "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
-  "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
-  "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
-  "Ecclesiastes", "Song of Songs", "Isaiah", "Jeremiah", "Lamentations",
-  "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
-  "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk",
-  "Zephaniah", "Haggai", "Zechariah", "Malachi",
-  "Matthew", "Mark", "Luke", "John", "Acts",
-  "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians",
-  "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy",
-  "2 Timothy", "Titus", "Philemon", "Hebrews", "James",
-  "1 Peter", "2 Peter", "1 John", "2 John", "3 John",
-  "Jude", "Revelation"
-];
-
 const cleanVerseText = (text: string): string => {
   if (!text) return '';
   
@@ -77,32 +41,15 @@ const cleanVerseText = (text: string): string => {
 };
 
 export function VersesAccordion({ content, selectedVerseReference }: VersesAccordionProps) {
+  const { allBooks, bookToNumber } = useBibleMetadata();
+
   const [verses, setVerses] = useState<Verse[]>([]);
   const [loadingVerses, setLoadingVerses] = useState(false);
   const [parsedReference, setParsedReference] = useState<ReturnType<typeof parseReference>>(null);
   const [pinnedVerses, setPinnedVerses] = useState<PinnedVerse[]>([]);
 
-  // Fetch verses when selectedVerseReference changes
-  useEffect(() => {
-    if (selectedVerseReference) {
-      console.log('VersesAccordion: selectedVerseReference changed to:', selectedVerseReference); // Debug
-      const parsed = parseReference(selectedVerseReference);
-      console.log('Parsed reference:', parsed); // Debug
-      setParsedReference(parsed);
-      if (parsed) {
-        fetchVerses(parsed);
-      } else {
-        setVerses([]);
-        setLoadingVerses(false);
-      }
-    } else {
-      setParsedReference(null);
-      setVerses([]);
-    }
-  }, [selectedVerseReference]);
-
   const parseReference = (reference: string) => {
-    const sortedBooks = [...ALL_BOOKS].sort((a, b) => b.length - a.length);
+    const sortedBooks = [...allBooks].sort((a, b) => b.length - a.length);
     
     for (const book of sortedBooks) {
       if (reference.startsWith(book)) {
@@ -129,7 +76,7 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
     setVerses([]);
 
     try {
-      const bookNumber = BOOK_TO_NUMBER[reference.book];
+      const bookNumber = bookToNumber[reference.book];
       if (!bookNumber) {
         throw new Error('Book not found');
       }
@@ -167,6 +114,25 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
     }
   };
 
+  // Fetch verses when selectedVerseReference changes
+  useEffect(() => {
+    if (selectedVerseReference) {
+      console.log('VersesAccordion: selectedVerseReference changed to:', selectedVerseReference); // Debug
+      const parsed = parseReference(selectedVerseReference);
+      console.log('Parsed reference:', parsed); // Debug
+      setParsedReference(parsed);
+      if (parsed) {
+        fetchVerses(parsed);
+      } else {
+        setVerses([]);
+        setLoadingVerses(false);
+      }
+    } else {
+      setParsedReference(null);
+      setVerses([]);
+    }
+  }, [selectedVerseReference]);
+
   const handlePin = () => {
     if (!parsedReference || !selectedVerseReference || verses.length === 0) return;
 
@@ -194,23 +160,6 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
     ? pinnedVerses.some(p => p.reference === selectedVerseReference)
     : false;
 
-  const handleBibleGatewayLink = () => {
-    if (!parsedReference || !selectedVerseReference) return;
-    
-    // Build the verse reference for BibleGateway
-    // Format: BOOK CHAPTER:VERSE or BOOK CHAPTER:VERSE1-VERSE2
-    let verseRef = `${parsedReference.book} ${parsedReference.chapter}`;
-    if (parsedReference.verseEnd) {
-      verseRef += `:${parsedReference.verseStart}-${parsedReference.verseEnd}`;
-    } else {
-      verseRef += `:${parsedReference.verseStart}`;
-    }
-    
-    // Open BibleGateway in the system browser
-    const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(verseRef)}&version=NKJV`;
-    BrowserOpenURL(url);
-  };
-
 
   return (
     <AccordionItem value="verses">
@@ -221,40 +170,28 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <div className="space-y-2 overflow-x-hidden">
+        <div className="space-y-2">
           {selectedVerseReference && parsedReference ? (
             <>
-              <div className="flex items-center justify-between mb-2 gap-2 min-w-0">
-                <div className="text-xs font-semibold text-muted-foreground truncate min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-muted-foreground">
                   {parsedReference.book} {parsedReference.chapter}
                   {parsedReference.verseEnd 
                     ? `:${parsedReference.verseStart}-${parsedReference.verseEnd}`
                     : `:${parsedReference.verseStart}`
                   }
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={handleBibleGatewayLink}
-                    title="Open in BibleGateway"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={handlePin}
-                    title={isPinned ? "Unpin verse" : "Pin verse"}
-                  >
-                    <Pin className={cn(
-                      "h-3 w-3",
-                      isPinned && "fill-current"
-                    )} />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handlePin}
+                >
+                  <Pin className={cn(
+                    "h-3 w-3",
+                    isPinned && "fill-current"
+                  )} />
+                </Button>
               </div>
               {loadingVerses ? (
                 <div className="text-xs text-muted-foreground py-2">Loading verses...</div>
@@ -293,8 +230,8 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {pinnedVerses.map((pinned, index) => (
                   <div key={index} className="space-y-1">
-                    <div className="flex items-center justify-between gap-2 min-w-0">
-                      <div className="text-xs font-semibold text-muted-foreground truncate min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-semibold text-muted-foreground">
                         {pinned.book} {pinned.chapter}
                         {pinned.verseEnd 
                           ? `:${pinned.verseStart}-${pinned.verseEnd}`
@@ -304,7 +241,7 @@ export function VersesAccordion({ content, selectedVerseReference }: VersesAccor
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 flex-shrink-0"
+                        className="h-5 w-5"
                         onClick={() => setPinnedVerses(prev => prev.filter((_, i) => i !== index))}
                       >
                         <Pin className="h-3 w-3 fill-current" />
