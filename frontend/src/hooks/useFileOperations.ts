@@ -64,17 +64,25 @@ export function useFileOperations(
         }
     }, [currentFilePath, content, handleSaveAs]);
 
+    const handleNew = useCallback(() => {
+        setCurrentFilePath(null);
+        setContent('');
+        toast.success('New file created');
+    }, [setContent]);
+
     useEffect(() => {
         const offOpen = EventsOn("menu:file:open", handleOpen);
         const offSave = EventsOn("menu:file:save", handleSave);
         const offSaveAs = EventsOn("menu:file:saveas", handleSaveAs);
+        const offNew = EventsOn("menu:file:new", handleNew);
 
         return () => {
             offOpen();
             offSave();
             offSaveAs();
+            offNew();
         };
-    }, [handleOpen, handleSave, handleSaveAs]);
+    }, [handleOpen, handleSave, handleSaveAs, handleNew]);
 
     return {
         currentFilePath,

@@ -76,6 +76,41 @@ export function Editor({ content, onChange, placeholder = 'Start typing your MDX
         const editor = editorRef.current;
         if (!editor) return false;
 
+        // Handle Enter key to exit lists when current item is empty
+        if (event.key === 'Enter' && !event.shiftKey) {
+          const { state } = view;
+          const { selection } = state;
+          const { $from } = selection;
+          
+          // Check if we're in a list (bullet or ordered)
+          if (editor.isActive('bulletList') || editor.isActive('orderedList')) {
+            // Find the list item node by searching up the node tree
+            let listItemNode = null;
+            
+            for (let depth = $from.depth; depth > 0; depth--) {
+              const node = $from.node(depth);
+              if (node.type.name === 'listItem') {
+                listItemNode = node;
+                break;
+              }
+            }
+            
+            // Check if the current list item is empty (only whitespace or empty)
+            if (listItemNode && listItemNode.textContent.trim() === '') {
+              event.preventDefault();
+              
+              // Exit the list and create a new paragraph
+              if (editor.isActive('bulletList')) {
+                editor.chain().focus().toggleBulletList().setParagraph().run();
+              } else if (editor.isActive('orderedList')) {
+                editor.chain().focus().toggleOrderedList().setParagraph().run();
+              }
+              
+              return true;
+            }
+          }
+        }
+
         // Handle Tab for indenting lists
         if (event.key === 'Tab' && !event.shiftKey) {
           if (editor.isActive('bulletList') || editor.isActive('orderedList')) {

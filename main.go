@@ -21,13 +21,16 @@ func main() {
 	// Build native application menu
 	appMenu := menu.NewMenu()
 	fileMenu := appMenu.AddSubmenu("File")
+	fileMenu.AddText("New", keys.CmdOrCtrl("N"), func(cd *menu.CallbackData) {
+		runtime.EventsEmit(app.ctx, "menu:file:new")
+	})
 	fileMenu.AddText("Open", keys.CmdOrCtrl("O"), func(cd *menu.CallbackData) {
 		runtime.EventsEmit(app.ctx, "menu:file:open")
 	})
 	fileMenu.AddText("Save", keys.CmdOrCtrl("S"), func(cd *menu.CallbackData) {
 		runtime.EventsEmit(app.ctx, "menu:file:save")
 	})
-	fileMenu.AddText("Save As", keys.CmdOrCtrl("Shift+S"), func(cd *menu.CallbackData) {
+	fileMenu.AddText("Save As", keys.Combo("S", keys.CmdOrCtrlKey, keys.ShiftKey), func(cd *menu.CallbackData) {
 		runtime.EventsEmit(app.ctx, "menu:file:saveas")
 	})
 	fileMenu.AddSeparator()
